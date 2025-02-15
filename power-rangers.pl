@@ -3,12 +3,8 @@
 
 :- initialization(start).
 :- use_module(library(process)).
-
-
 :- use_module(library(ansi_term)).
-:- dynamic(player_health/1).
-:- dynamic(player_special/1).
-:- dynamic(player_ranger/1).
+:- dynamic player_health/1,player_special/1,player_ranger/1.
 
 
 enemy_stats(krybot,         15, 15). %enemy_stats(EnemyName, MaxHP, BaseAttack)
@@ -535,8 +531,8 @@ mission5_red :-
     ( R = success ->
          prompt_action(use_special, R2),
          ( R2 = success ->
-              battle([salimoht], _Dummy, Outcome),
-              ( Outcome = win -> colored_writeln(green, 'Red Ranger: Salimoht ambushed and defeated!')
+              battle([rhinix], _Dummy, Outcome),
+              ( Outcome = win -> colored_writeln(green, 'Red Ranger: rhinix ambushed and defeated!')
               ; colored_writeln(red, 'You fell in battle... Game Over.'), halt )
          ; colored_writeln(red, 'Special ability failed. Try again.'), nl, mission5_red )
     ; colored_writeln(red, 'Wall jump failed. Try again.'), nl, mission5_red ).
@@ -664,8 +660,8 @@ mission6_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Your silent strike is flawless!'),
-         battle([salimoht], _Dummy, Outcome),
-         ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Salimoht eliminated!')
+         battle([rhinix], _Dummy, Outcome),
+         ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: rhinix eliminated!')
          ; colored_writeln(red, 'Your strike failed... Game Over.'), halt )
     ; colored_writeln(red, 'Combo failed. Try again.'), nl, mission6_shadow ).
 
