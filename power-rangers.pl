@@ -1,3 +1,6 @@
+/* Power Rangers SPD, by Gagan Bhatia. */
+
+
 :- initialization(start).
 
 :- use_module(library(ansi_term)).
