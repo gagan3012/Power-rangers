@@ -2,6 +2,8 @@
 
 
 :- initialization(start).
+:- use_module(library(process)).
+
 
 :- use_module(library(ansi_term)).
 :- dynamic(player_health/1).
@@ -49,6 +51,7 @@ start :-
     colored_writeln(cyan, '============================================'),
     ansi_format([fg(white), bold], ' Welcome to Power Rangers SPD!~n', []),
     colored_writeln(cyan, '============================================'),
+    play_sound_for_5_seconds,
     show_commands,
     choose_ranger,
     play_all_episodes,
@@ -98,6 +101,15 @@ init_player(Ranger) :-
     assert(player_special(0)),
     assert(player_ranger(Ranger)).
 
+play_sound_for_5_seconds :-
+    nl, write('Playing the SPD theme song...  (Volume On)'), nl,
+    process_create(path(python),
+        ['-c', "import winsound, time; \c
+                winsound.PlaySound('spd_song.wav', winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_LOOP); \c
+                time.sleep(5); \c
+                winsound.PlaySound(None, winsound.SND_PURGE)"],
+        [process(PID)]),
+    process_wait(PID, exit(0)).
 
 play_all_episodes :-
     episode0, pause,
