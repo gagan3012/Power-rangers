@@ -42,7 +42,7 @@ start :-
     colored_writeln(cyan, '============================================'),
     ansi_format([fg(white), bold], ' Welcome to Power Rangers SPD!~n', []),
     colored_writeln(cyan, '============================================'),
-    % play_sound_for_5_seconds,
+    play_sound_for_5_seconds,
     instructions,
     choose_ranger,
     play_all_episodes,

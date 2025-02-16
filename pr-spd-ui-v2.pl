@@ -908,13 +908,13 @@ bonus_for_action(dodge_success, 5).
 bonus_for_action(_, 0).
 
 determine_special(Total, SpecialName, Bonus) :-
-    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 5;
-      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 10;
-      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 15;
-      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 20;
-      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 25;
-      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 30;
-      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 35;
+    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 50;
+      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 60;
+      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 65;
+      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 70;
+      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 100;
+      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 200;
+      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 300;
       SpecialName = 'Cosmic Blast', Bonus = 40
     ).
 
