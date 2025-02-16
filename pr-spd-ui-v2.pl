@@ -1,6 +1,5 @@
-% =============================================================================
-% Power Rangers SPD – Web UI Version (Buttons Only Input)
-% =============================================================================
+/* Power Rangers SPD UI v2, by Gagan Bhatia. */
+
 
 :- use_module(library(process)).
 :- use_module(library(ansi_term)).
