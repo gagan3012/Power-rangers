@@ -46,6 +46,10 @@ reset_health :-
     retractall(player_health(_)),
     assert(player_health(100)).
 
+reset_special :-
+    retractall(player_special(_, _)),
+    assert(player_special(none, 0)).
+
 ranger_from_choice(1, red).
 ranger_from_choice(2, blue).
 ranger_from_choice(3, green).
@@ -866,7 +870,8 @@ player_turn(special, _EnemyName, EnemyHP, _EnemyAttack, NewEnemyHP, normal) :-
          BonusNew is Bonus + 10,
          random_between(Bonus, BonusNew, Damage),
          colored_format(green, 'You unleash your special attack ~w dealing ~w damage!~n', [SpecialName, Damage]),
-         NewEnemyHP is EnemyHP - Damage
+         NewEnemyHP is EnemyHP - Damage,
+         reset_special
     ; 
          colored_writeln(white, 'No special attack available! You lose your turn.'),
          NewEnemyHP is EnemyHP
