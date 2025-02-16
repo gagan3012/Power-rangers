@@ -65,6 +65,10 @@ reset_health :-
     retractall(player_health(_)),
     assert(player_health(100)).
 
+reset_special :-
+    retractall(player_special(_, _)),
+    assert(player_special(none, 0)).
+
 % Utility: Choose a ranger from a number.
 ranger_from_choice(1, red).
 ranger_from_choice(2, blue).
@@ -847,7 +851,9 @@ player_turn(special, _EnemyName, EnemyHP, _EnemyAttack, NewEnemyHP, normal) :-
          BonusNew is Bonus + 10,
          random_between(Bonus, BonusNew, Damage),
          colored_format(green, 'You unleash your special attack ~w dealing ~w damage!~n', [SpecialName, Damage]),
-         NewEnemyHP is EnemyHP - Damage
+         NewEnemyHP is EnemyHP - Damage,
+         reset_special,
+         colored_writeln(green, 'You have used your special attack!')
     ; 
          colored_writeln(white, 'No special attack available! You lose your turn.'),
          NewEnemyHP is EnemyHP
@@ -889,13 +895,13 @@ bonus_for_action(dodge_success, 5).
 bonus_for_action(_, 0).
 
 determine_special(Total, SpecialName, Bonus) :-
-    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 5;
-      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 10;
-      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 15;
-      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 20;
-      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 25;
-      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 30;
-      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 35;
+    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 50;
+      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 60;
+      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 65;
+      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 70;
+      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 100;
+      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 200;
+      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 300;
       SpecialName = 'Cosmic Blast', Bonus = 40
     ).
 
@@ -1158,12 +1164,18 @@ main_page_handler(_Request) :-
                       div([class('transcript')], \print_transcript(Transcript)),
                       div([class('input-area')],
                           form([action('/command'), method(post)],
-                               [ input([type(text), name(cmd), placeholder('Enter command...'), class('cmd-input')], []),
+                               [ input([type(text), name(cmd), placeholder('Enter command...'), class('cmd-input'), autofocus(true)], []),
                                  input([type(submit), value('Submit'), class('cmd-button')], [])
                                ])
                       )
                     ])
-              ])
+              ]),
+            script([], "window.onload = function() {
+                      var transcriptDiv = document.querySelector('.transcript');
+                      if (transcriptDiv) {
+                        transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+                      }
+                    }")
         ]
     ).
 
@@ -1242,19 +1254,18 @@ css_styles -->
            margin: 10px;
         }
         .transcript {
-            width: 90%;
-            height: 75%;      
-            background-color: rgba(0,0,0,0.7);
-            padding: 20px;
-            border-radius: 10px;
-            overflow-y: auto;      
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-            scroll-behavior: smooth; 
+           width: 90%;
+           max-height: 500px;       
+           background-color: rgba(0,0,0,0.7);
+           padding: 20px;
+           border-radius: 10px;
+           overflow-y: auto;        
+           box-shadow: 0 0 10px rgba(0,0,0,0.5);
+           margin-bottom: 20px;
+           scroll-behavior: smooth; 
         }
         .input-area {
            text-align: center;
-
         }
         .cmd-input {
            width: 60%;
@@ -1287,20 +1298,43 @@ css_styles -->
         .color-magenta { color: magenta; }
         .color-yellow { color: yellow; }
         .user-command { color: #aaa; font-style: italic; }
-        /* New video container styling */
-        #video-container {
-           position: fixed;
-           bottom: 10px;
-           left: 10px;
-           width: 300px;
-           height: 200px;
-           z-index: 1000;
-           border: 2px solid #fff;
-           border-radius: 5px;
-           overflow: hidden;
-        }
       ')
     ]).
+    html(script([], '
+      // Scroll the transcript container to the bottom.
+      function scrollTranscriptToBottom() {
+         var transcript = document.querySelector(".transcript");
+         if(transcript) {
+           transcript.scrollTop = transcript.scrollHeight;
+         }
+      }
+      
+      // Animate each line word by word.
+      function animateTranscript() {
+         var lines = document.querySelectorAll(".transcript .line");
+         lines.forEach(function(line) {
+           var fullText = line.getAttribute("p");
+           if (!fullText) return;
+           line.innerHTML = "";
+           var words = fullText.split(" ");
+           var index = 0;
+           function addWord() {
+             if (index < words.length) {
+                line.innerHTML += (index > 0 ? " " : "") + words[index];
+                index++;
+                scrollTranscriptToBottom();
+                setTimeout(addWord, 200); // Adjust speed (milliseconds per word)
+             }
+           }
+           addWord();
+         });
+      }
+      
+      window.addEventListener("load", function() {
+         scrollTranscriptToBottom();
+         animateTranscript();
+      });
+    ')).
 
 % -----------------------------------------------------------------------------
 % Game Wrapper and Server Shutdown
