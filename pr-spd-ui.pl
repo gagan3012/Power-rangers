@@ -1,101 +1,72 @@
-/* Power Rangers SPD, by Gagan Bhatia. */
+% =============================================================================
+% Power Rangers SPD – Web UI Version (Reorganized and Fixed)
+% =============================================================================
 
 :- use_module(library(process)).
 :- use_module(library(ansi_term)).
-:- dynamic player_health/1, player_special/2, player_ranger/1.
+:- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+:- use_module(library(http/http_parameters)).
+:- use_module(library(http/html_write)).
+:- use_module(library(http/http_error)).
 
-% Enemy stats: enemy_stats(EnemyName, MaxHP, BaseAttack)
-enemy_stats(krybot,         15, 15).
-enemy_stats(bluehead,       30, 20).
-enemy_stats(orangehead,     60, 30).
-enemy_stats(salimoht,      150, 25).
-enemy_stats(rhinix,        180, 35).
-enemy_stats(ringbah_robot, 200, 40).
-enemy_stats(detagor_robot, 200, 40).
-enemy_stats(scimatu_robot, 250, 45).
-enemy_stats(drew,          150, 30).
-enemy_stats(drew_giant,    250, 45).
-enemy_stats(fake_benaag,   180, 35).
-enemy_stats(benaag_robot,  200, 40).
-enemy_stats(benaag,        250, 45).
+% -----------------------------------------------------------------------------
+% Dynamic Predicates & Initial Declarations
+% -----------------------------------------------------------------------------
+:- dynamic player_health/1.
+:- dynamic player_special/2.
+:- dynamic player_ranger/1.
+:- dynamic game_transcript/1.
+:- dynamic command_queue/1.
+:- dynamic help_box/1.
 
-ranger_color(red, red).
-ranger_color(blue, blue).
-ranger_color(green, green).
-ranger_color(yellow, yellow).
-ranger_color(pink, magenta).  
-ranger_color(shadow, cyan).
+% Initial values
+player_health(100).
+player_special(none, 0).
+% player_ranger/1 is asserted once the player chooses a ranger.
+game_transcript([]).
+help_box([]).
 
-colored_write(Color, Text) :-
-    ansi_format([fg(Color)], Text, []).
-colored_writeln(Color, Text) :-
-    ansi_format([fg(Color)], Text, []),
-    nl.
-color_format(Color, Format, Args) :-
-    ansi_format([fg(Color)], Format, Args).
+% -----------------------------------------------------------------------------
+% Utility Predicates
+% -----------------------------------------------------------------------------
 
-colored_format(Color, Format, Args) :-
-    ansi_format([fg(Color)], Format, Args).
+% Initialize command queue for user input
+:- initialization(init_command_queue).
+init_command_queue :-
+    message_queue_create(Q),
+    retractall(command_queue(_)),
+    assert(command_queue(Q)).
 
-start :-
-    nl,
-    colored_writeln(cyan, '============================================'),
-    ansi_format([fg(white), bold], ' Welcome to Power Rangers SPD!~n', []),
-    colored_writeln(cyan, '============================================'),
-    % play_sound_for_5_seconds,
-    instructions,
-    choose_ranger,
-    play_all_episodes,
-    colored_writeln(green, 'Thank you rangers for saving the world.'),
-    nl,
-    halt.
+% Wait for a command message from the queue.
+wait_for_command(Command) :-
+    command_queue(Q),
+    thread_get_message(Q, command(Command)).
 
-help :-
-    nl,
-    colored_writeln(white, '==================== HELP ===================='),
-    colored_writeln(white, 'You can enter the following commands anytime:'),
-    colored_writeln(white, 'Movement/Action Commands:'),
-    colored_writeln(white, '  double_jump, wall_jump, fire_laser, forward_roll, jump, punch_beam, run_fast, track, catch, collect'),
-    colored_writeln(white, 'Battle Commands:'),
-    colored_writeln(white, '  attack, defend, special, dodge'),
-    colored_writeln(white, 'Other Commands:'),
-    colored_writeln(white, '  help   (Display this help message)'),
-    colored_writeln(white, '  pick_special(SpecialName)   (Equip a special attack manually)'),
-    colored_writeln(white, '=============================================='),
-    nl.
+wait_for_battle_action(Action) :-
+    wait_for_command(Input),
+    ( Input = help ->
+         help, wait_for_battle_action(Action)
+    ; Input = quit ->
+         quit
+    ; Action = Input
+    ).
 
-instructions :-
-    nl,
-    colored_writeln(white, 'Available commands during missions:'),
-    colored_writeln(white, '  Movement/Action commands: double_jump, wall_jump, fire_laser,'),
-    colored_writeln(white, '         forward_roll, jump, punch_beam, run_fast, track, catch, collect'),
-    colored_writeln(white, '  Battle commands (during fights): attack, defend, special, dodge'),
-    nl,
-    colored_writeln(white, 'When prompted "Enter action:" type one of the commands (followed by a period).'),
-    nl.
+wait_for_ranger_input(Input) :-
+    wait_for_command(RawInput),
+    ( RawInput = help ->
+         help, wait_for_ranger_input(Input)
+    ; RawInput = quit ->
+         quit
+    ; Input = RawInput
+    ).
 
-quit :-
-    nl,
-    colored_writeln(white, 'Exiting Power Rangers SPD...'),
-    colored_writeln(white, 'Thank you for playing!'),
-    halt.
+% Utility: Reinitialize player health
+reset_health :-
+    retractall(player_health(_)),
+    assert(player_health(100)).
 
-choose_ranger :-
-    nl,
-    colored_writeln(white, 'Choose your Ranger:'),
-    colored_writeln(red, '  1. Red Ranger      (Physical: Wall Jump; Special: Invisible)'),
-    colored_writeln(blue, '  2. Blue Ranger     (Physical: Double Jump; Special: Forcefield)'),
-    colored_writeln(green, '  3. Green Ranger    (Physical: Wall Jump; Special: Aura Tracking)'),
-    colored_writeln(yellow, '  4. Yellow Ranger   (Physical: Forward Roll; Special: Duplicate)'),
-    colored_writeln(magenta, '  5. Pink Ranger     (Physical: Forward Roll; Special: Stone Punches)'),
-    colored_writeln(cyan, '  6. Shadow Ranger   (Physical: All abilities; Special: Sword Strike)'),
-    colored_write(white, 'Enter the number of your choice: '),
-    read(Choice),
-    ranger_from_choice(Choice, Ranger),
-    init_player(Ranger),
-    ranger_color(Ranger, Color),
-    ansi_format([fg(Color), bold], 'You selected ~w Ranger.~n', [Ranger]).
-
+% Utility: Choose a ranger from a number.
 ranger_from_choice(1, red).
 ranger_from_choice(2, blue).
 ranger_from_choice(3, green).
@@ -104,25 +75,46 @@ ranger_from_choice(5, pink).
 ranger_from_choice(6, shadow).
 ranger_from_choice(_, red).  % default
 
+% Initialize player state
 init_player(Ranger) :-
     retractall(player_health(_)),
     retractall(player_special(_, _)),
     retractall(player_ranger(_)),
     assert(player_health(100)),
-    ( \+ player_special(_, _) ->
-         assert(player_special(none, 0))
-    ; true ),
+    assert(player_special(none, 0)),
     assert(player_ranger(Ranger)).
 
-play_sound_for_5_seconds :-
-    nl, write('Playing the SPD theme song...  (Volume On)'), nl,
-    process_create(path(python),
-        ['-c', "import winsound, time; \c
-                winsound.PlaySound('spd_song.wav', winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_LOOP); \c
-                time.sleep(5); \c
-                winsound.PlaySound(None, winsound.SND_PURGE)"],
-        [process(PID)]),
-    process_wait(PID, exit(0)).
+% -----------------------------------------------------------------------------
+% Game Logic: Episodes, Missions, Battle Mechanics, etc.
+% (For brevity, the episode and mission predicates are included as in the original)
+% -----------------------------------------------------------------------------
+
+start :-
+    nl,
+    colored_writeln(cyan, '============================================'),
+    ansi_format([fg(white), bold], ' Welcome to Power Rangers SPD!~n', []),
+    colored_writeln(cyan, '============================================'),
+    instructions,
+    choose_ranger,
+    play_all_episodes,
+    colored_writeln(green, 'Thank you rangers for saving the world.'),
+    nl,
+    halt.
+
+instructions :-
+    nl,
+    colored_writeln(white, 'Available commands during missions:'),
+    colored_writeln(white, '  Movement/Action: double_jump, wall_jump, fire_laser, forward_roll, jump, punch_beam, run_fast, track, catch, collect'),
+    colored_writeln(white, '  Battle: attack, defend, special, dodge'),
+    nl,
+    colored_writeln(white, 'Type one of the commands when prompted (don’t forget the period).'),
+    nl.
+
+quit :-
+    nl,
+    colored_writeln(white, 'Exiting Power Rangers SPD...'),
+    colored_writeln(white, 'Thank you for playing!'),
+    halt.
 
 play_all_episodes :-
     episode0, pause,
@@ -135,19 +127,12 @@ play_all_episodes :-
     episode7, reset_health, choose_ranger_prompt,
     episode8, reset_health.
 
-reset_health :-
-    retractall(player_health(_)),
-    % retractall(player_special(_, _)),
-    assert(player_health(100)).
-    % ( player_special(_, _) -> true ; assert(player_special(none, 0)) ).
-
 choose_ranger_prompt :-
-    nl,
     colored_write(white, 'Would you like to change your ranger for the next episode? (yes/no): '),
-    read(Answer),
-    ( Answer == yes ->
+    wait_for_ranger_input(Answer),
+    ( Answer = yes ->
          choose_ranger
-    ; Answer == no ->
+    ; Answer = no ->
          true
     ; colored_writeln(white, 'Invalid response. Keeping current ranger.'), nl
     ).
@@ -158,6 +143,7 @@ pause :-
 current_ranger(R) :-
     player_ranger(R).
 
+% --- Episodes & Missions (Examples) ---
 % --- Episode 0 ---
 episode0 :-
     nl, colored_writeln(blue, 'Episode 0 - Introduction'),
@@ -837,7 +823,6 @@ mission8_shadow :-
     ; colored_writeln(red, 'Combo failed. Try again.'), nl, mission8_shadow ).
 
 % --- Battle Mechanics ---
-
 battle(EnemyList, _Dummy, Outcome) :-
     cool_battle(EnemyList, Outcome).
 
@@ -851,48 +836,17 @@ cool_battle([EnemyName|Rest], Outcome) :-
          cool_battle(Rest, Outcome)
     ; Outcome = lose ).
 
-battle_loop(EnemyName, EnemyHP, EnemyAttack, Outcome) :-
-    player_health(PlayerHP),
-    ( PlayerHP =< 0 ->
-         Outcome = lose,
-         colored_writeln(red, 'You have been defeated!')
-    ; EnemyHP =< 0 ->
-         colored_format(green, 'You defeated ~w!~n', [EnemyName]),
-         % Award a special attack based on the defeated enemy:
-         award_special(EnemyName),
-         Outcome = win
-    ; 
-         colored_format(yellow, 'Your HP: ~w, ~w HP: ~w~n', [PlayerHP, EnemyName, EnemyHP]),
-         colored_write(white, 'Choose your action (attack/defend/special/dodge): '),
-         read(PlayerAction),
-         player_turn(PlayerAction, EnemyName, EnemyHP, EnemyAttack, NewEnemyHP, Modifier),
-         colored_format(yellow, 'After your action, ~w HP is now ~w~n', [EnemyName, NewEnemyHP]),
-         enemy_turn(EnemyName, EnemyAttack, Modifier, DamageToPlayer),
-         bonus_for_action(Modifier, Bonus),
-         update_player_health(DamageToPlayer, Bonus, NewPlayerHP),
-         colored_format(red, 'Enemy attacks! You take ~w damage but gain ~w bonus HP. Your HP is now ~w~n', [DamageToPlayer, Bonus, NewPlayerHP]),
-         ( NewPlayerHP =< 0 ->
-              Outcome = lose,
-              colored_writeln(red, 'You have been defeated!'), nl
-         ; 
-              retract(player_health(PlayerHP)),
-              assert(player_health(NewPlayerHP)),
-              battle_loop(EnemyName, NewEnemyHP, EnemyAttack, Outcome)
-         )
-    ).
-
 player_turn(attack, _EnemyName, EnemyHP, _EnemyAttack, NewEnemyHP, normal) :-
     random_between(15, 25, Damage),
     colored_format(green, 'You attack dealing ~w damage!~n', [Damage]),
     NewEnemyHP is EnemyHP - Damage.
 player_turn(defend, _EnemyName, EnemyHP, _EnemyAttack, EnemyHP, defend) :-
     colored_writeln(white, 'You take a defensive stance.').
-
 player_turn(special, _EnemyName, EnemyHP, _EnemyAttack, NewEnemyHP, normal) :-
     player_special(SpecialName, Bonus),
     ( SpecialName \= none ->
-         Bonusnew is Bonus + 10,
-         random_between(Bonus, Bonusnew, Damage),
+         BonusNew is Bonus + 10,
+         random_between(Bonus, BonusNew, Damage),
          colored_format(green, 'You unleash your special attack ~w dealing ~w damage!~n', [SpecialName, Damage]),
          NewEnemyHP is EnemyHP - Damage
     ; 
@@ -935,18 +889,179 @@ bonus_for_action(defend, 15).
 bonus_for_action(dodge_success, 5).
 bonus_for_action(_, 0).
 
+determine_special(Total, SpecialName, Bonus) :-
+    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 5;
+      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 10;
+      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 15;
+      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 20;
+      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 25;
+      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 30;
+      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 35;
+      SpecialName = 'Cosmic Blast', Bonus = 40
+    ).
+
+% (Define enemy_stats/3 and any other predicates you need below)
+enemy_stats(krybot,         15, 15).
+enemy_stats(bluehead,       30, 20).
+enemy_stats(orangehead,     60, 30).
+enemy_stats(salimoht,      150, 25).
+enemy_stats(rhinix,        180, 35).
+enemy_stats(ringbah_robot, 200, 40).
+enemy_stats(detagor_robot, 200, 40).
+enemy_stats(scimatu_robot, 250, 45).
+enemy_stats(drew,          150, 30).
+enemy_stats(drew_giant,    250, 45).
+enemy_stats(fake_benaag,   180, 35).
+enemy_stats(benaag_robot,  200, 40).
+enemy_stats(benaag,        250, 45).
+
+ranger_color(red, red).
+ranger_color(blue, blue).
+ranger_color(green, green).
+ranger_color(yellow, yellow).
+ranger_color(pink, magenta).  
+ranger_color(shadow, cyan).
+
+% -----------------------------------------------------------------------------
+% Web Integration: Override Output/Input and Sidebar Setup
+% -----------------------------------------------------------------------------
+
+% Override output predicates to append HTML to the transcript
+colored_writeln(Color, Text) :-
+    atom_concat('color-', Color, Class),
+    HTML = p([class(Class)], Text),
+    game_print(HTML).
+
+colored_write(Color, Text) :-
+    atom_concat('color-', Color, Class),
+    HTML = span([class(Class)], Text),
+    game_print(HTML).
+
+colored_format(Color, Format, Args) :-
+    format(string(Out), Format, Args),
+    atom_concat('color-', Color, Class),
+    HTML = span([class(Class)], Out),
+    game_print(HTML).
+
+color_format(Color, Format, Args) :-
+    format(string(Out), Format, Args),
+    atom_concat('color-', Color, Class),
+    HTML = span([class(Class)], Out),
+    game_print(HTML).
+
+game_print(Line) :-
+    retract(game_transcript(Old)),
+    append(Old, [Line], New),
+    assert(game_transcript(New)).
+
+clear_screen :-
+    retractall(game_transcript(_)),
+    assert(game_transcript([])).
+
+% Override input prompt for the web UI
 prompt_action(Expected, Outcome) :-
-    colored_write(white, 'Enter action (help. for instructions/quit. to end the game): '),
-    read(Action),
-    ( Action == help ->
-         help,
-         prompt_action(Expected, Outcome)
-    ; Action == quit -> 
+    HTMLPrompt = p(em(['Awaiting command (expected: ', Expected, ')'])),
+    game_print(HTMLPrompt),
+    wait_for_command(UserCmd),
+    ( UserCmd = Expected ->
+         Outcome = success,
+         clear_help_box
+    ; UserCmd = help ->
+         help, prompt_action(Expected, Outcome)
+    ; UserCmd = quit ->
          quit
-    ; Action == Expected ->
-         Outcome = success
     ; Outcome = fail
     ).
+
+choose_ranger :-
+    clear_screen,
+    colored_writeln(white, 'Choose your Ranger:'),
+    colored_writeln(red, '  1. Red Ranger      (Physical: Wall Jump; Special: Invisible)'),
+    colored_writeln(blue, '  2. Blue Ranger     (Physical: Double Jump; Special: Forcefield)'),
+    colored_writeln(green, '  3. Green Ranger    (Physical: Wall Jump; Special: Aura Tracking)'),
+    colored_writeln(yellow, '  4. Yellow Ranger   (Physical: Forward Roll; Special: Duplicate)'),
+    colored_writeln(magenta, '  5. Pink Ranger     (Physical: Forward Roll; Special: Stone Punches)'),
+    colored_writeln(cyan, '  6. Shadow Ranger   (Physical: All abilities; Special: Sword Strike)'),
+    colored_write(white, 'Enter the number of your choice: '),
+    wait_for_command(ChoiceAtom),
+    atom_number(ChoiceAtom, ChoiceNum),
+    ranger_from_choice(ChoiceNum, Ranger),
+    init_player(Ranger),
+    ranger_color(Ranger, Color),
+    colored_format(Color, "You selected ~w Ranger.~n", [Ranger]),
+    clear_screen.
+
+
+choose_ranger_prompt :-
+    colored_write(white, 'Would you like to change your ranger for the next episode? (yes/no): '),
+    wait_for_command(Answer),
+    ( Answer = yes ->
+         choose_ranger
+    ; Answer = no ->
+         true
+    ; colored_writeln(white, 'Invalid response. Keeping current ranger.'), nl
+    ).
+
+% Special attack awarding and picking
+award_special(EnemyName) :-
+    enemy_stats(EnemyName, EHP, EAttack),
+    Total is EHP + EAttack,
+    determine_special(Total, SpecialName, Bonus),
+    colored_format(cyan, 'Defeated enemy dropped a special attack: ~w (Bonus: ~w)!~n', [SpecialName, Bonus]),
+    colored_write(white, 'Do you want to pick up this special attack? (yes/no): '),
+    wait_for_command(Response),
+    ( Response = yes ->
+         pick_special(SpecialName, Bonus)
+    ; colored_writeln(white, 'You chose not to pick up the special attack.')
+    ).
+
+pick_special(SpecialName, Bonus) :-
+    ( player_special(Current, _), Current \= none ->
+         format(string(Prompt), "You already have a special attack (~w). Replace it? (yes/no): ", [Current]),
+         colored_write(white, Prompt),
+         wait_for_command(Resp),
+         ( Resp = yes ->
+             retract(player_special(Current, _)),
+             assert(player_special(SpecialName, Bonus)),
+             colored_format(green, "Your new special attack ~w (Bonus: ~w) is now equipped!~n", [SpecialName, Bonus])
+         ; colored_writeln(white, 'You keep your current special attack.')
+         )
+    ; retract(player_special(none, _)),
+      assert(player_special(SpecialName, Bonus)),
+      colored_format(green, "Special attack ~w (Bonus: ~w) equipped!~n", [SpecialName, Bonus])
+    ).
+
+battle_loop(EnemyName, EnemyHP, EnemyAttack, Outcome) :-
+    player_health(PlayerHP),
+    ( PlayerHP =< 0 ->
+         Outcome = lose,
+         colored_writeln(red, 'You have been defeated!')
+    ; EnemyHP =< 0 ->
+         colored_format(green, "You defeated ~w!~n", [EnemyName]),
+         award_special(EnemyName),
+         Outcome = win
+    ; colored_format(yellow, "Your HP: ~w, ~w HP: ~w~n", [PlayerHP, EnemyName, EnemyHP]),
+      colored_write(white, 'Choose your action (attack/defend/special/dodge): '),
+      wait_for_battle_action(PlayerAction),
+      player_turn(PlayerAction, EnemyName, EnemyHP, EnemyAttack, NewEnemyHP, Modifier),
+      colored_format(yellow, "After your action, ~w HP is now ~w~n", [EnemyName, NewEnemyHP]),
+      enemy_turn(EnemyName, EnemyAttack, Modifier, DamageToPlayer),
+      bonus_for_action(Modifier, Bonus),
+      update_player_health(DamageToPlayer, Bonus, NewPlayerHP),
+      colored_format(red, "Enemy attacks! You take ~w damage but gain ~w bonus HP. Your HP is now ~w~n",
+                     [DamageToPlayer, Bonus, NewPlayerHP]),
+      ( NewPlayerHP =< 0 ->
+            Outcome = lose,
+            colored_writeln(red, 'You have been defeated!'), nl
+      ; retract(player_health(PlayerHP)),
+        assert(player_health(NewPlayerHP)),
+        battle_loop(EnemyName, NewEnemyHP, EnemyAttack, Outcome)
+      )
+    ).
+
+% -----------------------------------------------------------------------------
+% Sidebar: Player Status and Help Box
+% -----------------------------------------------------------------------------
 
 collect_items(0) :-
     colored_writeln(green, 'All items collected!'), nl.
@@ -961,55 +1076,246 @@ collect_items(N) :-
       collect_items(N)
     ).
 
-
-award_special(EnemyName) :-
-    enemy_stats(EnemyName, EHP, EAttack),
-    Total is EHP + EAttack,
-    determine_special(Total, SpecialName, Bonus),
-    colored_format(cyan, 'Defeated enemy dropped a special attack: ~w (Bonus: ~w)!~n', [SpecialName, Bonus]),
-    colored_write(white, 'Do you want to pick up this special attack? (yes/no): '),
-    read(Response),
-    ( Response == yes ->
-         pick_special(SpecialName, Bonus)
-    ; colored_writeln(white, 'You chose not to pick up the special attack.')
-    ).
-
-determine_special(Total, SpecialName, Bonus) :-
-    ( Total < 50 -> SpecialName = 'Spark Surge', Bonus = 5;
-      Total < 80 -> SpecialName = 'Thunder Punch', Bonus = 10;
-      Total < 120 -> SpecialName = 'Lightning Edge', Bonus = 15;
-      Total < 160 -> SpecialName = 'Meteor Smash', Bonus = 20;
-      Total < 200 -> SpecialName = 'Stellar Kick', Bonus = 25;
-      Total < 240 -> SpecialName = 'Galactic Fury', Bonus = 30;
-      Total < 280 -> SpecialName = 'Nebula Strike', Bonus = 35;
-      SpecialName = 'Cosmic Blast', Bonus = 40
-    ).
-
-pick_special(SpecialName, Bonus) :-
-    ( player_special(Current, _) , Current \= none ->
-         colored_write(white, 'You already have a special attack (~w). Do you want to replace it? (yes/no): '),
-         write(Current), nl,
-         read(Resp),
-         ( Resp == yes ->
-             retract(player_special(Current, _)),
-             assert(player_special(SpecialName, Bonus)),
-             colored_format(green, 'Your new special attack ~w (Bonus: ~w) is now equipped!~n', [SpecialName, Bonus])
-         ; colored_writeln(white, 'You keep your current special attack.')
+player_status_html(
+    div([id('sidebar-status')],
+        [ h2('Player Status'),
+          p([strong('Ranger:'), ' ', RangerSpan]),
+          p([strong('Health:'), ' ', BatteryIcon, ' ', HealthTerm, '%']),
+          p([strong('Special:'), ' ', SpecialTerm]),
+          \help_box_html
+        ]
+    )
+) :-
+    ( player_ranger(Ranger) ->
+         ( ranger_color(Ranger, RangerColor) ->
+             atom_concat('color-', RangerColor, Class),
+             RangerSpan = span([class(Class)], Ranger)
+         ; RangerSpan = Ranger
          )
-    ; retract(player_special(none, _)),
-      assert(player_special(SpecialName, Bonus)),
-      colored_format(green, 'Special attack ~w (Bonus: ~w) equipped!~n', [SpecialName, Bonus])
+      ; RangerSpan = 'None'
+    ),
+    ( player_health(Health) -> HealthTerm = Health ; HealthTerm = 0 ),
+    ( player_special(Special, _) -> SpecialAtom = Special ; SpecialAtom = 'none' ),
+    battery_symbol(Health, BatteryIcon),
+    ( SpecialAtom = 'none' -> SpecialTerm = 'Not Available' ; SpecialTerm = SpecialAtom ).
+
+battery_symbol(Health, BatteryIcon) :-
+    ( Health = 100 -> BatteryIcon = "[=====]" ;
+      Health >= 75 -> BatteryIcon = "[==== ]" ;
+      Health >= 50 -> BatteryIcon = "[===  ]" ;
+      Health >= 25 -> BatteryIcon = "[==   ]" ;
+      Health > 0   -> BatteryIcon = "[=    ]" ;
+                     BatteryIcon  = "[     ]" 
     ).
 
-pick_special(SpecialName) :-
-    special_bonus(SpecialName, Bonus),
-    pick_special(SpecialName, Bonus).
+clear_help_box :-
+    retractall(help_box(_)),
+    assert(help_box([])).
 
-special_bonus('Spark Surge', 5).
-special_bonus('Thunder Punch', 10).
-special_bonus('Lightning Edge', 15).
-special_bonus('Meteor Smash', 20).
-special_bonus('Stellar Kick', 25).
-special_bonus('Galactic Fury', 30).
-special_bonus('Nebula Strike', 35).
-special_bonus('Cosmic Blast', 40).
+help :-
+    retractall(help_box(_)),
+    assert(help_box([
+        p([strong('===== HELP =====')]),
+        p('Movement/Action Commands: double_jump, wall_jump, fire_laser, forward_roll, jump, punch_beam, run_fast, track, catch, collect'),
+        p('Battle Commands: attack, defend, special, dodge'),
+        p('Other Commands: help, quit'),
+        p([strong('==============')])
+    ])).
+
+help_box_html -->
+    { help_box(HelpContent), HelpContent \= [] },
+    html(div([class('help-box')], HelpContent)).
+help_box_html --> [].
+
+% -----------------------------------------------------------------------------
+% HTTP Handlers & HTML UI
+% -----------------------------------------------------------------------------
+
+:- http_handler(root(.), main_page_handler, []).
+
+main_page_handler(_Request) :-
+    player_status_html(StatusHtml),
+    game_transcript(Transcript),
+    reply_html_page(
+        [ title('Power Rangers SPD'),
+          \css_styles
+        ],
+        [ div(class('container'),
+              [ div(class('sidebar'),
+                     [ \html(StatusHtml),
+                       div([class('sidebar-buttons')],
+                           [ form([action('/command'), method(post)],
+                                  [ input([type(hidden), name(cmd), value(help)], []),
+                                    input([type(submit), value('Help'), class('btn-sidebar')], [])
+                                  ]),
+                             form([action('/command'), method(post)],
+                                  [ input([type(hidden), name(cmd), value(quit)], []),
+                                    input([type(submit), value('Quit'), class('btn-sidebar')], [])
+                                  ])
+                           ])
+                     ]),
+                div(class('main-content'),
+                    [ h1([style('text-align:center; margin-top:20px;')], 'Power Rangers SPD'),
+                      div([class('transcript')], \print_transcript(Transcript)),
+                      div([class('input-area')],
+                          form([action('/command'), method(post)],
+                               [ input([type(text), name(cmd), placeholder('Enter command...'), class('cmd-input')], []),
+                                 input([type(submit), value('Submit'), class('cmd-button')], [])
+                               ])
+                      )
+                    ])
+              ])
+        ]
+    ).
+
+
+:- http_handler(root(command), command_handler, []).
+
+command_handler(Request) :-
+    http_parameters(Request, [ 
+        cmd(CmdAtom, [optional(true), default("")])
+    ]),
+    ( CmdAtom \= "" ->
+         command_queue(Q),
+         thread_send_message(Q, command(CmdAtom)),
+         UserHTML = p([class('user-command')], [em('User:'), ' ', CmdAtom]),
+         game_print(UserHTML)
+    ; true ),
+    http_redirect(moved, '/', Request).
+
+print_transcript([]) --> [].
+print_transcript([Line|Rest]) -->
+    html([Line, br([])]),
+    print_transcript(Rest).
+
+css_styles -->
+    html([
+      meta([name(viewport), content('width=device-width, initial-scale=1')]),
+      style('
+        body {
+           background: linear-gradient(135deg, #0d0d0d, #262626);
+           color: #eee;
+           font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+           margin: 0;
+           padding: 0;
+        }
+        .container {
+           display: flex;
+           flex-wrap: wrap;
+           width: 100%;
+           box-sizing: border-box;
+        }
+        .sidebar {
+           width: 20%;
+           min-width: 200px;
+           background-color: rgba(0,0,0,0.8);
+           padding: 10px;
+           margin: 10px;
+           border-radius: 10px;
+           color: #fff;
+           font-size: 14px;
+        }
+        .sidebar-buttons {
+           margin-top: 10px;
+        }
+        .btn-sidebar {
+           width: 100%;
+           padding: 8px;
+           margin-top: 5px;
+           font-size: 14px;
+           border: none;
+           border-radius: 5px;
+           background-color: #007acc;
+           color: #fff;
+           cursor: pointer;
+        }
+        .btn-sidebar:hover {
+           background-color: #005fa3;
+        }
+        .help-box {
+           background-color: rgba(255,255,255,0.1);
+           padding: 10px;
+           margin-top: 10px;
+           border-radius: 5px;
+        }
+        .main-content {
+           flex-grow: 1;
+           margin: 10px;
+        }
+        .transcript {
+            width: 90%;
+            height: 75%;      
+            background-color: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-y: auto;      
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            scroll-behavior: smooth; 
+        }
+        .input-area {
+           text-align: center;
+
+        }
+        .cmd-input {
+           width: 60%;
+           padding: 10px;
+           font-size: 16px;
+           border: 2px solid #444;
+           border-radius: 5px;
+           background-color: #333;
+           color: #eee;
+        }
+        .cmd-button {
+           padding: 10px 20px;
+           font-size: 16px;
+           border: none;
+           border-radius: 5px;
+           background-color: #007acc;
+           color: #fff;
+           cursor: pointer;
+           margin-left: 10px;
+        }
+        .cmd-button:hover {
+           background-color: #005fa3;
+        }
+        /* Color classes */
+        .color-red { color: red; }
+        .color-blue { color: blue; }
+        .color-green { color: #00cc00; }
+        .color-white { color: #ffffff; }
+        .color-cyan { color: cyan; }
+        .color-magenta { color: magenta; }
+        .color-yellow { color: yellow; }
+        .user-command { color: #aaa; font-style: italic; }
+        /* New video container styling */
+        #video-container {
+           position: fixed;
+           bottom: 10px;
+           left: 10px;
+           width: 300px;
+           height: 200px;
+           z-index: 1000;
+           border: 2px solid #fff;
+           border-radius: 5px;
+           overflow: hidden;
+        }
+      ')
+    ]).
+
+% -----------------------------------------------------------------------------
+% Game Wrapper and Server Shutdown
+% -----------------------------------------------------------------------------
+
+% When the game finishes (start/0), stop the HTTP server and halt Prolog.
+game_wrapper :-
+    start,
+    http_stop_server(http_dispatch, [port(8080)]),
+    halt.
+
+start_server :-
+    retractall(game_transcript(_)),
+    assert(game_transcript([])),
+    http_server(http_dispatch, [port(8080)]),
+    thread_create(game_wrapper, _GameThread, [detached(true)]),
+    format("Server running on http://localhost:8080/~n", []).
