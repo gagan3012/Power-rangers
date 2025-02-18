@@ -2,7 +2,7 @@
 
 :- use_module(library(process)).
 :- use_module(library(ansi_term)).
-:- dynamic player_health/1, player_special/2, player_ranger/1.
+:- dynamic player_health/1, player_special/2, player_ranger/1, player_specials/1.
 
 % Enemy stats: enemy_stats(EnemyName, MaxHP, BaseAttack)
 enemy_stats(krybot,         15, 15).
@@ -115,12 +115,12 @@ quit :-
 choose_ranger :-
     nl,
     colored_writeln(white, 'Choose your Ranger:'),
-    colored_writeln(red, '  1. Red Ranger      (Physical: Wall Jump; Special: Invisible)'),
-    colored_writeln(blue, '  2. Blue Ranger     (Physical: Double Jump; Special: Forcefield)'),
-    colored_writeln(green, '  3. Green Ranger    (Physical: Wall Jump; Special: Aura Tracking)'),
-    colored_writeln(yellow, '  4. Yellow Ranger   (Physical: Forward Roll; Special: Duplicate)'),
-    colored_writeln(magenta, '  5. Pink Ranger     (Physical: Forward Roll; Special: Stone Punches)'),
-    colored_writeln(cyan, '  6. Shadow Ranger   (Physical: All abilities; Special: Sword Strike)'),
+    colored_writeln(red, '  1. Jack - Red Ranger      (Physical: Wall Jump; Special: Invisible)'),
+    colored_writeln(blue, '  2. Sky - Blue Ranger     (Physical: Double Jump; Special: Forcefield)'),
+    colored_writeln(green, '  3. Bridge - Green Ranger    (Physical: Wall Jump; Special: Aura Tracking)'),
+    colored_writeln(yellow, '  4. Z - Yellow Ranger   (Physical: Forward Roll; Special: Duplicate)'),
+    colored_writeln(magenta, '  5. Syd - Pink Ranger     (Physical: Forward Roll; Special: Stone Punches)'),
+    colored_writeln(cyan, '  6. Doggie - Shadow Ranger   (Physical: All abilities; Special: Sword Strike)'),
     colored_write(white, 'Enter the number of your choice: '),
     read(Choice),
     ranger_from_choice(Choice, Ranger),
@@ -226,6 +226,7 @@ mission1_blue :-
     prompt_action(double_jump, Result),
     ( Result = success ->
          colored_writeln(green, 'You soared over the gap!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, krybot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Krybots defeated!')
          ; colored_writeln(red, 'You were overwhelmed... Game Over.'), halt )
@@ -241,6 +242,7 @@ mission1_red :-
          colored_writeln(blue, 'Now, activate your special ability by typing "use_special." to become invisible and ambush the enemy.'),
          prompt_action(use_special, R2),
          ( R2 = success ->
+              colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([bluehead, krybot], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: Bluehead defeated!')
               ; colored_writeln(red, 'You lost the fight... Game Over.'), halt )
@@ -254,7 +256,8 @@ mission1_green :-
     colored_write(white, 'Type "track." to locate your foe: '),
     prompt_action(track, R),
     ( R = success ->
-         colored_writeln(green, 'Enemy located!'),
+         colored_writeln(green, 'Enemy located!'), 
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Green Ranger: Enemy defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -268,6 +271,7 @@ mission1_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You rolled past the enemy!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Enemy defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -281,6 +285,7 @@ mission1_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Barrier broken!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Enemy defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -295,6 +300,7 @@ mission1_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Shadow Ranger: Perfect combo executed!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, krybot, krybot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Foes defeated!')
          ; colored_writeln(red, 'You were overwhelmed... Game Over.'), halt )
@@ -320,6 +326,7 @@ mission2_blue :-
     prompt_action(fire_laser, R),
     ( R = success ->
          colored_writeln(green, 'Missile destroyed!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, salimoht], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Salimoht defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -331,6 +338,7 @@ mission2_red :-
     colored_writeln(blue, 'Type "use_special." to activate your power: '),
     prompt_action(use_special, R),
     ( R = success ->
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([salimoht, bluehead, salimoht], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Salimoht defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -342,6 +350,7 @@ mission2_green :-
     colored_writeln(blue, 'Type "track." to find them: '),
     prompt_action(track, R),
     ( R = success ->
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, bluehead, salimoht], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Enemies defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -353,6 +362,7 @@ mission2_yellow :-
     colored_writeln(blue, 'Type "forward_roll." to roll past danger: '),
     prompt_action(forward_roll, R),
     ( R = success ->
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, bluehead, salimoht], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Enemy defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -364,6 +374,7 @@ mission2_pink :-
     colored_writeln(blue, 'Type "punch_beam." to break through: '),
     prompt_action(punch_beam, R),
     ( R = success ->
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, bluehead, salimoht], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Bluehead defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -376,6 +387,7 @@ mission2_shadow :-
     prompt_action(wall_jump, R2),
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, salimoht, bluehead], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Foes defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -400,6 +412,7 @@ mission3_blue :-
     prompt_action(run_fast, Result),
     ( Result = success ->
          colored_writeln(green, 'You dash forward with incredible speed!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, rhinix], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Enemies defeated during your sprint!')
          ; colored_writeln(red, 'You were caught by the enemies... Game Over.'), halt )
@@ -412,6 +425,7 @@ mission3_red :-
     ( R = success ->
          colored_format(yellow, 'After your action, ~w HP is now ~w~n', [bluehead, _]),  
          colored_writeln(green, 'You gracefully leap over the walls!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, rhinix], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Red Ranger: Bluehead defeated!')
          ; colored_writeln(red, 'You fell in battle... Game Over.'), halt )
@@ -421,6 +435,7 @@ mission3_green :-
     nl, colored_writeln(white, 'Green Ranger Mission: Collect the Energy Orbs'),
     colored_writeln(blue, 'Collect 5 energy orbs by typing "collect." for each orb.'),
     collect_items(5),
+    colored_writeln(green, 'Now you are ready to morph into action!'),
     battle([krybot, rhinix], _Dummy, Outcome),
     ( Outcome = win -> colored_writeln(green, 'Green Ranger: Orbs collected and enemy defeated!')
     ; colored_writeln(red, 'An enemy ambushed you... Game Over.'), halt ).
@@ -431,6 +446,7 @@ mission3_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You executed a perfect roll!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, rhinix], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Enemy defeated during your escape!')
          ; colored_writeln(red, 'You were caught... Game Over.'), halt )
@@ -442,6 +458,7 @@ mission3_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Barrier shattered!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, rhinix], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Bluehead defeated!')
          ; colored_writeln(red, 'You were overwhelmed... Game Over.'), halt )
@@ -455,6 +472,7 @@ mission3_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Combo successful!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, krybot, rhinix], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Foes defeated with your deadly combo!')
          ; colored_writeln(red, 'Your combo failed in battle... Game Over.'), halt )
@@ -479,6 +497,7 @@ mission4_blue :-
     prompt_action(jump, R),
     ( R = success ->
          colored_writeln(green, 'You leap gracefully across the rooftops!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, ringbah_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: You secured the urban area!')
          ; colored_writeln(red, 'You fell in battle... Game Over.'), halt )
@@ -492,6 +511,7 @@ mission4_red :-
          colored_writeln(green, 'You scaled the walls! Now, activate your special ability by typing "use_special."'),
          prompt_action(use_special, R2),
          ( R2 = success ->
+             colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([bluehead, ringbah_robot], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: Bluehead defeated atop the fortress!')
               ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -512,6 +532,7 @@ mission4_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You rolled after the enemy!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, ringbah_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: You caught and defeated the enemy!')
          ; colored_writeln(red, 'You were overtaken... Game Over.'), halt )
@@ -523,6 +544,7 @@ mission4_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'The barrier crumbles!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, ringbah_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: You defeated Bluehead!')
          ; colored_writeln(red, 'Defeated in combat... Game Over.'), halt )
@@ -536,6 +558,7 @@ mission4_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Your shadow moves are flawless!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([ringbah_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Ringbah Robot defeated!')
          ; colored_writeln(red, 'Your shadow faltered... Game Over.'), halt )
@@ -559,8 +582,8 @@ mission5_blue :-
     colored_writeln(blue, 'Use "double_jump." to navigate through enemy fire.'),
     prompt_action(double_jump, R),
     ( R = success ->
-         colored_format(green, 'You attack dealing ~w damage!~n', [0]),  % Damage details placeholder
          colored_writeln(green, 'You maneuver through the air!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, scimatu_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Recon successful, enemies neutralized!')
          ; colored_writeln(red, 'You were hit... Game Over.'), halt )
@@ -573,6 +596,7 @@ mission5_red :-
     ( R = success ->
          prompt_action(use_special, R2),
          ( R2 = success ->
+              colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([scimatu_robot], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: rhinix ambushed and defeated!')
               ; colored_writeln(red, 'You fell in battle... Game Over.'), halt )
@@ -583,6 +607,7 @@ mission5_green :-
     nl, colored_writeln(white, 'Green Ranger Mission: Rescue Operation'),
     colored_writeln(blue, 'Collect 5 items to rescue civilians by typing "collect."'),
     collect_items(5),
+    colored_writeln(green, 'Now you are ready to morph into action!'),
     battle([scimatu_robot], _Dummy, Outcome),
     ( Outcome = win -> colored_writeln(green, 'Green Ranger: Civilians rescued and enemy defeated!')
     ; colored_writeln(red, 'Rescue failed... Game Over.'), halt ).
@@ -593,6 +618,7 @@ mission5_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You dash ahead swiftly!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([scimatu_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Foe caught and defeated!')
          ; colored_writeln(red, 'You were overtaken... Game Over.'), halt )
@@ -604,6 +630,7 @@ mission5_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Obstacle shattered!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([orangehead], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Orangehead defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -617,6 +644,7 @@ mission5_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Stealth strike successful!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([scimatu_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Detagor’s Robot neutralized!')
          ; colored_writeln(red, 'Your stealth failed... Game Over.'), halt )
@@ -641,6 +669,7 @@ mission6_blue :-
     prompt_action(fire_laser, R),
     ( R = success ->
          colored_writeln(green, 'Laser fired successfully!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, drew], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Lab infiltrated and secured!')
          ; colored_writeln(red, 'Mission failed... Game Over.'), halt )
@@ -654,6 +683,7 @@ mission6_red :-
          colored_writeln(blue, 'You reached the rooftop! Activate your special ability ("use_special.") to rescue the hostage.'),
          prompt_action(use_special, R2),
          ( R2 = success ->
+              colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([bluehead, drew], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: Hostage rescued, enemy defeated!')
               ; colored_writeln(red, 'Rescue failed... Game Over.'), halt )
@@ -666,6 +696,7 @@ mission6_green :-
     prompt_action(track, R),
     ( R = success ->
          colored_writeln(green, 'Enemies located!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, drew], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Green Ranger: Maze cleared and enemies defeated!')
          ; colored_writeln(red, 'You were overwhelmed... Game Over.'), halt )
@@ -677,6 +708,7 @@ mission6_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You rolled out with finesse!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, drew], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Enemy neutralized!')
          ; colored_writeln(red, 'You got caught... Game Over.'), halt )
@@ -688,6 +720,7 @@ mission6_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Barrier broken!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, drew], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Lab secured!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -701,6 +734,7 @@ mission6_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Your silent strike is flawless!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([drew, drew_giant], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: rhinix eliminated!')
          ; colored_writeln(red, 'Your strike failed... Game Over.'), halt )
@@ -725,6 +759,7 @@ mission7_blue :-
     prompt_action(jump, R),
     ( R = success ->
          colored_writeln(green, 'You leap over urban obstacles!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, krybot, fake_benaag], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: City secured!')
          ; colored_writeln(red, 'You were defeated in the chase... Game Over.'), halt )
@@ -737,6 +772,7 @@ mission7_red :-
     ( R = success ->
          prompt_action(use_special, R2),
          ( R2 = success ->
+              colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([orangehead, krybot, fake_benaag], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: Building cleared!')
               ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -752,6 +788,7 @@ mission7_green :-
          prompt_action(catch, R2),
          ( R2 = success ->
               colored_writeln(green, 'Sniper caught!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([fake_benaag], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Green Ranger: Sniper subdued!')
               ; colored_writeln(red, 'The sniper escaped... Game Over.'), halt )
@@ -764,6 +801,7 @@ mission7_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You rolled through the chaos!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, fake_benaag], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Building cleared!')
          ; colored_writeln(red, 'Enemies overwhelmed you... Game Over.'), halt )
@@ -775,6 +813,7 @@ mission7_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Door shattered!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([bluehead, fake_benaag], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Guard neutralized!')
          ; colored_writeln(red, 'You were caught... Game Over.'), halt )
@@ -788,6 +827,7 @@ mission7_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Ambush executed flawlessly!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([fake_benaag], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: Drew Giant subdued!')
          ; colored_writeln(red, 'Ambush failed... Game Over.'), halt )
@@ -812,6 +852,7 @@ mission8_blue :-
     prompt_action(jump, R),
     ( R = success ->
          colored_writeln(green, 'You traverse the rooftops effortlessly!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, krybot, bluehead, benaag_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Blue Ranger: Rooftop area secured!')
          ; colored_writeln(red, 'You fell... Game Over.'), halt )
@@ -824,6 +865,7 @@ mission8_red :-
     ( R = success ->
          prompt_action(use_special, R2),
          ( R2 = success ->
+              colored_writeln(green, 'Now you are ready to morph into action!'),
               battle([benaag_robot], _Dummy, Outcome),
               ( Outcome = win -> colored_writeln(green, 'Red Ranger: Fake General Benaag defeated!')
               ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -834,6 +876,7 @@ mission8_green :-
     nl, colored_writeln(white, 'Green Ranger Mission: Maze Rescue'),
     colored_writeln(blue, 'Rescue 5 civilians by collecting them. Type "collect."'),
     collect_items(5),
+    colored_writeln(green, 'Now you are ready to morph into action!'),
     battle([krybot, benaag_robot], _Dummy, Outcome),
     ( Outcome = win -> colored_writeln(green, 'Green Ranger: Civilians rescued, enemy defeated!')
     ; colored_writeln(red, 'Rescue failed... Game Over.'), halt ).
@@ -844,6 +887,7 @@ mission8_yellow :-
     prompt_action(forward_roll, R),
     ( R = success ->
          colored_writeln(green, 'You dash through the floors!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([krybot, benaag_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Yellow Ranger: Enemies cleared!')
          ; colored_writeln(red, 'You were overwhelmed... Game Over.'), halt )
@@ -855,6 +899,7 @@ mission8_pink :-
     prompt_action(punch_beam, R),
     ( R = success ->
          colored_writeln(green, 'Barrier broken!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([benaag_robot], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Pink Ranger: Enemy defeated!')
          ; colored_writeln(red, 'You were defeated... Game Over.'), halt )
@@ -868,6 +913,7 @@ mission8_shadow :-
     prompt_action(use_special, R3),
     ( R1 = success, R2 = success, R3 = success ->
          colored_writeln(green, 'Your ultimate combo is unstoppable!'),
+         colored_writeln(green, 'Now you are ready to morph into action!'),
          battle([benaag], _Dummy, Outcome),
          ( Outcome = win -> colored_writeln(green, 'Shadow Ranger: General Benaag defeated!')
          ; colored_writeln(red, 'The ultimate showdown failed... Game Over.'), halt )
@@ -883,6 +929,8 @@ cool_battle([EnemyName|Rest], Outcome) :-
     enemy_stats(EnemyName, EnemyHP, EnemyAttack),
     nl,
     colored_format(magenta, 'A wild ~w appears! (HP: ~w, Attack: ~w)~n', [EnemyName, EnemyHP, EnemyAttack]),
+    colored_format(magenta, 'Prepare to battle! SPD Emergency~n', []),
+
     battle_loop(EnemyName, EnemyHP, EnemyAttack, BattleOutcome),
     ( BattleOutcome = win ->
          cool_battle(Rest, Outcome)
